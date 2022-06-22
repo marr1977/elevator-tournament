@@ -6,6 +6,7 @@ import hallerdal.elevator.Elevator;
  * 
  * Elevator choice:
  *  - The closest of all stationary elevators and those elevators moving towards that floor
+ *  - Otherwise, an elevator with some capacity
  *  - Otherwise, random
  * 
  * Next floor choice:
@@ -14,7 +15,7 @@ import hallerdal.elevator.Elevator;
  * @author hallerdal
  *
  */
-public class ClosestController extends AbstractController {
+public class ClosestOrFreeController extends AbstractController {
 
 	@Override
 	public Elevator assignElevator(int fromFloor, int destinationFloor) {
@@ -22,6 +23,12 @@ public class ClosestController extends AbstractController {
 		Elevator elivator = getClosestElevator(fromFloor, e -> { 
 			return isStationaryOrGoingTowardsFloor(e, fromFloor);
 		});
+		
+		if (elivator != null) {
+			return elivator;
+		}
+		
+		elivator = elevators.stream().filter(e -> e.getMaxCapacity() > e.getTravelers().size()).findAny().orElse(null);
 		
 		if (elivator != null) {
 			return elivator;

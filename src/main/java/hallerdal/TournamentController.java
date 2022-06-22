@@ -8,12 +8,13 @@ import java.util.Random;
 import hallerdal.elevator.ElevatorController;
 import hallerdal.elevator.Log;
 import hallerdal.elevator.SimulationEngine;
+import hallerdal.elevator.SimulationParameters;
 import hallerdal.elevator.SimulationStatistics;
 
 public class TournamentController {
 
 	private List<ElevatorController> contestants = new ArrayList<>();
-	private List<RoundParameters> rounds = new ArrayList<>();
+	private List<SimulationParameters> rounds = new ArrayList<>();
 	private Random random;
 	
 	public TournamentController() {
@@ -29,7 +30,7 @@ public class TournamentController {
 		contestants.add(contestant);
 	}
 	
-	public void addRound(RoundParameters round) {
+	public void addRound(SimulationParameters round) {
 		rounds.add(round);
 	}
 	
@@ -37,15 +38,16 @@ public class TournamentController {
 		
 		Log.logEnabled = false;
 		
-		for (RoundParameters round : rounds) {
+		for (SimulationParameters round : rounds) {
 			System.out.println("Starting round " + round);
 			
 			List<RoundResult> results = new ArrayList<>();
 			
 			for (var c : contestants) {
 				SimulationEngine engine = new SimulationEngine(
-					round.getNumFloors(), round.getNumElevators(), 100, round.getMaxConcurrentTravelers(), 
-					round.getTravelersToDeliver(), random, c);
+					round, 
+					random, 
+					c);
 				
 				SimulationStatistics statistics = engine.run();
 				results.add(new RoundResult(c, statistics));
@@ -55,10 +57,10 @@ public class TournamentController {
 			
 			Collections.sort(results);
 			
-			System.out.println("Result of round: " + round);
+			System.out.println("Result of round:");
 			for (int i = 0; i < results.size(); ++i) {
 				System.out.println(String.format("  %d: %f - %s", i + 1, 
-					results.get(i).stats.getAverageTripTimePerFloorTravelled(), results.get(i).controller.getClass().getSimpleName()));
+					results.get(i).stats.getAverageTripTimePerFloorTravelled(), results.get(i).controller));
 			}
 			System.out.println();
 		}

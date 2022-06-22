@@ -105,5 +105,21 @@ public abstract class AbstractController implements ElevatorController {
 		return getRandomNextFloor(elevator);
 	}
 
-
+	protected boolean isStationaryOrGoingTowardsFloor(Elevator e, int floor) {
+		if (e.getState() == State.STATIONARY) {
+			return true;
+		}
+		if (e.getState() == State.MOVING_DOWN && e.getCurrentFloor() > floor) {
+			return true;
+		}
+		if (e.getState() == State.MOVING_UP && e.getCurrentFloor() < floor) {
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName();
+	}
 }

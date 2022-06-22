@@ -16,38 +16,30 @@ public class SimulationEngine {
 
 	private List<Elevator> elevators = new ArrayList<>();
 	private List<Floor> floors = new ArrayList<>();
-	private int peopleToDeliver;
-	private int maxConcurrentTravelers;
-	private int numFloors;
 	private Random random;
 	private ElevatorController controller;
+	private SimulationParameters params;
 	
-	/**
-	 * Number of ticks it takes to travel between floors
-	 */
-	private static final int FLOOR_TRAVEL_TIME = 10;
-	
-	public SimulationEngine(int numFloors, int numElevators, int elevatorCapacity,
-		int maxConcurrentTravelers, int peopleToDeliver, Random random,
+	public SimulationEngine(
+		SimulationParameters params,
+		Random random,
 		ElevatorController controller) {
 		
-		this.numFloors = numFloors;
-		this.maxConcurrentTravelers = maxConcurrentTravelers;
-		this.peopleToDeliver = peopleToDeliver;
+		this.params = params;
 		this.controller = controller;
 		this.random = new Random();
 		
-		for (int i = 0; i < numFloors; ++i) {
+		for (int i = 0; i < params.getNumFloors(); ++i) {
 			floors.add(new Floor(i));
 		}
 
-		for (int i = 0; i < numElevators; ++i) {
+		for (int i = 0; i < params.getNumElevators(); ++i) {
 			String label = Character.valueOf((char)('A' + i)).toString();
 			elevators.add(new Elevator(
-				elevatorCapacity, FLOOR_TRAVEL_TIME, label, controller, floors));
+				params, label, controller, floors));
 		}
 		
-		controller.init(elevators, numFloors, random);
+		controller.init(elevators, params.getNumFloors(), random);
 	}
 	
 	public SimulationStatistics run() {
@@ -56,8 +48,8 @@ public class SimulationEngine {
 		
 		int currentTime = 0;
 		
-		while (statistics.getTravelersDelivered() < peopleToDeliver) {
-			if (getPeopleInSystem() < maxConcurrentTravelers) {
+		while (statistics.getTravelersDelivered() < params.getTravelersToDeliver()) {
+			if (getPeopleInSystem() < params.getMaxConcurrentTravelers()) {
 				Traveler traveler = getTraveler();
 				traveler.setRequestTime(currentTime);
 
@@ -94,10 +86,10 @@ public class SimulationEngine {
 	 * Gets a traveler from random origin floor to random destination floor 
 	 */
 	private Traveler getTraveler() {
-		int originFloor = random.nextInt(numFloors);
-		int destinationFloor = random.nextInt(numFloors);
+		int originFloor = random.nextInt(params.getNumFloors());
+		int destinationFloor = originFloor;
 		while (destinationFloor == originFloor) {
-			destinationFloor = random.nextInt(numFloors);
+			destinationFloor = random.nextInt(params.getNumFloors());
 		}
 		return new Traveler(originFloor, destinationFloor);
 	}

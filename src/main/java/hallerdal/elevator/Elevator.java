@@ -14,7 +14,6 @@ public class Elevator {
 	}
 	
 	private int currentFloor;      // For moving elevators this is the last floor passed
-	private int maxCapacity;
 
 	private State state = State.STATIONARY;
 	
@@ -26,18 +25,19 @@ public class Elevator {
 	private List<Floor> floors;
 	
 	private int progressBetweenFloors;
-	private int ticksBetweenFloors;
 	private Integer nextFloorToStopAt;
 	
+	private int remainingTimeOnFloor;
+	
+	private SimulationParameters params;
+	
 	public Elevator(
-		int maxCapacity, 
-		int ticksBetweenFloors,
+		SimulationParameters params, 
 		String label, 
 		ElevatorController controller, 
 		List<Floor> floors) {
 		
-		this.maxCapacity = maxCapacity;
-		this.ticksBetweenFloors = ticksBetweenFloors;
+		this.params = params;
 		this.label = label;
 		this.controller = controller;
 		this.floors = floors;
@@ -53,6 +53,10 @@ public class Elevator {
 	
 	public State getState() {
 		return state;
+	}
+	
+	public int getMaxCapacity() {
+		return params.getElevatorCapacity();
 	}
 	
 	public void onNewTravelerWaiting(int floor) {
@@ -72,7 +76,12 @@ public class Elevator {
 			return null;
 		}
 		
-		if (++progressBetweenFloors < ticksBetweenFloors) {
+		if (remainingTimeOnFloor > 0) {
+			--remainingTimeOnFloor;
+			return null;
+		}
+		
+		if (++progressBetweenFloors < params.getTravelTimeBetweeenFloors()) {
 			return null;
 		}
 		
@@ -85,9 +94,13 @@ public class Elevator {
 			return null;
 		}
 		
+		remainingTimeOnFloor += params.getTimePerFloorStop();
+		
 		floorsToVisit.remove(currentFloor);
 		
 		List<Traveler> disembarked = disembarkTravelers();
+		
+		remainingTimeOnFloor += disembarked.size() * params.getTimePerPassengerToEnterExitElevator();
 		
 		if (disembarked.size() > 0) {
 			Log.info("Elevator %s disembarked these travelers on floor %d: %s", label, currentFloor, disembarked);
@@ -115,11 +128,13 @@ public class Elevator {
 	
 	private void pickUpFromCurrentFloor() {
 		Floor floor = floors.get(currentFloor);
-		List<Traveler> travelersToPickUp = floor.removeWaiting(this, maxCapacity - travelers.size());
+		List<Traveler> travelersToPickUp = floor.removeWaiting(this, params.getElevatorCapacity() - travelers.size());
 		
 		travelersToPickUp.forEach(t -> { travelers.add(t); floorsToVisit.add(t.getDestinationFloor()); });
 		
 		if (travelersToPickUp.size() > 0) {
+			remainingTimeOnFloor += travelersToPickUp.size() * params.getTimePerPassengerToEnterExitElevator();
+			
 			Log.info("Elevator %s embarked these travelers on floor %d: %s", label, currentFloor, travelersToPickUp);
 		}
 	}
